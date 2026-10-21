@@ -919,3 +919,36 @@
     width: 100%;
   }
 }
+
+.room-book-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px 18px;
+  border: 1px solid #173e3a;
+  border-radius: 3px;
+  background: #173e3a;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.room-book-button:hover:not(:disabled) {
+  background: #285b53;
+}
+
+.room-book-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.booking-success-message {
+  margin: 16px 0;
+  color: #216b43;
+  font-weight: 600;
+}
