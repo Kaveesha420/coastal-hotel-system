@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  UserRound,
-  LogIn,
-  UserPlus,
-  LogOut,
-  BedDouble,
-} from "lucide-react";
+import { UserRound, LogIn, UserPlus, LogOut, BedDouble } from "lucide-react";
 import "./AuthSection.css";
 
 const API_URL = (
@@ -28,6 +22,10 @@ function AuthSection() {
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [bookingsError, setBookingsError] = useState("");
+
+  const [cancellingBookingId, setCancellingBookingId] = useState(null);
+  const [bookingActionError, setBookingActionError] = useState("");
+  const [bookingActionMessage, setBookingActionMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -122,6 +120,61 @@ function AuthSection() {
       controller.abort();
     };
   }, [user]);
+
+  async function handleCancelBooking(bookingId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this booking?",
+    );
+
+    if (!confirmed) return;
+
+    const token = sessionStorage.getItem("hotelToken");
+
+    if (!token) {
+      setBookingActionError("Please log in again to cancel your booking.");
+      return;
+    }
+
+    setCancellingBookingId(bookingId);
+    setBookingActionError("");
+    setBookingActionMessage("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/bookings/${bookingId}/cancel`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to cancel this booking.");
+      }
+
+      setBookings((currentBookings) =>
+        currentBookings.map((booking) =>
+          booking.id === bookingId
+            ? { ...booking, status: "CANCELLED" }
+            : booking,
+        ),
+      );
+
+      setBookingActionMessage(
+        result.message || "Booking cancelled successfully.",
+      );
+    } catch (error) {
+      setBookingActionError(
+        error.message || "Unable to cancel this booking. Please try again.",
+      );
+    } finally {
+      setCancellingBookingId(null);
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -263,6 +316,18 @@ function AuthSection() {
                 </p>
               )}
 
+              {bookingActionError && (
+                <p className="account-error" role="alert">
+                  {bookingActionError}
+                </p>
+              )}
+
+              {bookingActionMessage && (
+                <p className="account-success" role="status">
+                  {bookingActionMessage}
+                </p>
+              )}
+
               {!bookingsLoading && !bookingsError && bookings.length === 0 && (
                 <p className="booking-message">
                   You have no bookings yet. Explore our rooms to plan your stay.
@@ -351,6 +416,21 @@ function AuthSection() {
                           <span>Total amount</span>
                           <strong>LKR {totalAmount}</strong>
                         </div>
+
+                        {["PENDING", "CONFIRMED"].includes(booking.status) && (
+                          <div className="booking-actions">
+                            <button
+                              type="button"
+                              className="booking-cancel-button"
+                              onClick={() => handleCancelBooking(booking.id)}
+                              disabled={cancellingBookingId !== null}
+                            >
+                              {cancellingBookingId === booking.id
+                                ? "Cancelling..."
+                                : "Cancel Booking"}
+                            </button>
+                          </div>
+                        )}
                       </article>
                     );
                   })}

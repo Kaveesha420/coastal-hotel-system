@@ -7,6 +7,93 @@ import { requireAuth } from "../middleware/authMiddleware.js";
 const router = Router();
 
 /**
+ * PATCH /api/bookings/:id/cancel
+ * Allows a customer to cancel their own eligible booking.
+ */
+router.patch("/:id/cancel", requireAuth, async (req, res) => {
+  try {
+    const bookingId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(bookingId) || bookingId < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid booking ID is required.",
+      });
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: {
+        id: bookingId,
+      },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+      },
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
+    }
+
+    // Customers may cancel only their own bookings.
+    if (booking.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to cancel this booking.",
+      });
+    }
+
+    // Only pending or confirmed bookings can be cancelled.
+    if (!["PENDING", "CONFIRMED"].includes(booking.status)) {
+      return res.status(409).json({
+        success: false,
+        message: `This booking cannot be cancelled because its status is ${booking.status}.`,
+      });
+    }
+
+    // Conditional update prevents overwriting a status changed concurrently.
+    const result = await prisma.booking.updateMany({
+      where: {
+        id: bookingId,
+        userId: req.user.id,
+        status: booking.status,
+      },
+      data: {
+        status: "CANCELLED",
+      },
+    });
+
+    if (result.count !== 1) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "The booking status has changed. Refresh your bookings and try again.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking cancelled successfully.",
+      booking: {
+        id: booking.id,
+        status: "CANCELLED",
+      },
+    });
+  } catch (error) {
+    console.error("Cancel booking error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to cancel the booking.",
+    });
+  }
+});
+
+/**
  * GET /api/bookings/my-bookings
  * Returns bookings belonging to the logged-in customer.
  */
