@@ -102,6 +102,10 @@ function App() {
   const [availabilitySearched, setAvailabilitySearched] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
 
+  const [bookingLoadingId, setBookingLoadingId] = useState(null);
+  const [bookingError, setBookingError] = useState("");
+  const [bookingMessage, setBookingMessage] = useState("");
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -181,7 +185,6 @@ function App() {
     }
 
     setAvailabilityLoading(true);
-    setRooms([]);
     setRoomsError("");
 
     try {
@@ -225,6 +228,104 @@ function App() {
       );
     } finally {
       setAvailabilityLoading(false);
+    }
+  }
+
+  async function handleCreateBooking(room) {
+    setBookingError("");
+    setBookingMessage("");
+
+    if (!checkIn || !checkOut) {
+      setBookingError("Please select your check-in and check-out dates first.");
+      document.getElementById("rooms")?.scrollIntoView({
+        behavior: "smooth",
+      });
+      return;
+    }
+
+    if (checkOut <= checkIn) {
+      setBookingError("Check-out must be after check-in.");
+      return;
+    }
+
+    const token = sessionStorage.getItem("hotelToken");
+
+    if (!token) {
+      setBookingError("Please log in to book this room.");
+      document.getElementById("account")?.scrollIntoView({
+        behavior: "smooth",
+      });
+      window.location.hash = "account";
+      return;
+    }
+
+    setBookingLoadingId(room.id);
+
+    try {
+      const apiUrl = (
+        import.meta.env.VITE_API_URL || "http://localhost:5000"
+      ).replace(/\/$/, "");
+
+      const response = await fetch(`${apiUrl}/api/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          roomId: room.id,
+          checkIn,
+          checkOut,
+          guests: Number(guests),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to create your booking.");
+      }
+
+      setBookingMessage(
+        `Booking request created successfully! Booking code: ${result.booking.bookingCode}. Status: ${result.booking.status}.`,
+      );
+
+      window.dispatchEvent(new CustomEvent("hotel:bookings-updated"));
+
+      try {
+        const apiUrl = (
+          import.meta.env.VITE_API_URL || "http://localhost:5000"
+        ).replace(/\/$/, "");
+
+        const params = new URLSearchParams({
+          checkIn,
+          checkOut,
+          guests,
+        });
+
+        const availabilityResponse = await fetch(
+          `${apiUrl}/api/rooms/availability?${params.toString()}`,
+        );
+
+        const availabilityResult = await availabilityResponse.json();
+
+        if (availabilityResponse.ok && availabilityResult.success) {
+          setRooms(availabilityResult.data);
+        }
+      } catch (refreshError) {
+        console.error("Room availability refresh failed:", refreshError);
+      }
+
+      window.location.hash = "account";
+      document.getElementById("account")?.scrollIntoView({
+        behavior: "smooth",
+      });
+    } catch (error) {
+      setBookingError(
+        error.message || "Unable to create your booking. Please try again.",
+      );
+    } finally {
+      setBookingLoadingId(null);
     }
   }
 
@@ -416,6 +517,20 @@ function App() {
             </p>
           )}
 
+          {bookingError && (
+            <p className="availability-error" role="alert">
+              {bookingError}
+            </p>
+          )}
+
+          {bookingMessage && (
+            <p className="booking-success-message" role="status">
+              {bookingMessage}
+            </p>
+          )}
+
+          <div className="availability-results"></div>
+
           <div className="availability-results">
             {(roomsLoading || availabilityLoading) && (
               <p className="rooms-status">
@@ -457,7 +572,6 @@ function App() {
               )}
 
             {!roomsLoading &&
-              !availabilityLoading &&
               rooms.map((room) => {
                 const roomType =
                   room.type === "VIP"
@@ -506,9 +620,21 @@ function App() {
                         <span>/ night</span>
                       </p>
 
-                      <a href="#contact" className="text-link">
-                        Enquire about this room <ArrowRight size={16} />
-                      </a>
+                      <button
+                        type="button"
+                        className="room-book-button"
+                        onClick={() => handleCreateBooking(room)}
+                        disabled={
+                          bookingLoadingId !== null || availabilityLoading
+                        }
+                      >
+                        {bookingLoadingId === room.id
+                          ? "Submitting..."
+                          : "Book This Room"}
+                        {bookingLoadingId !== room.id && (
+                          <ArrowRight size={16} />
+                        )}
+                      </button>
                     </div>
                   </article>
                 );

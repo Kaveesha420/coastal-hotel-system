@@ -116,7 +116,18 @@ function AuthSection() {
 
     loadMyBookings();
 
+    function handleBookingsUpdated() {
+      loadMyBookings();
+    }
+
+    window.addEventListener("hotel:bookings-updated", handleBookingsUpdated);
+
     return () => {
+      window.removeEventListener(
+        "hotel:bookings-updated",
+        handleBookingsUpdated,
+      );
+
       controller.abort();
     };
   }, [user]);
