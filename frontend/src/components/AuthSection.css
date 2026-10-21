@@ -1,0 +1,363 @@
+
+.account-section {
+  padding-top: 70px;
+  padding-bottom: 80px;
+}
+
+.account-heading {
+  max-width: 650px;
+  margin: 0 auto 35px;
+  text-align: center;
+}
+
+.account-heading h2 {
+  margin: 12px 0;
+}
+
+.account-heading p {
+  color: #737a75;
+  line-height: 1.7;
+}
+
+.account-card {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px;
+  box-sizing: border-box;
+  border: 1px solid #e6e1d7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(26, 54, 44, 0.07);
+}
+
+.account-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 5px;
+  margin-bottom: 25px;
+  border-radius: 8px;
+  background: #f4f3ef;
+}
+
+.account-tabs button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #53645b;
+  font: inherit;
+  cursor: pointer;
+}
+
+.account-tabs button.active {
+  background: #245e52;
+  color: #fff;
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.account-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account-field label {
+  color: #30453b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account-field input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  border: 1px solid #d8ddd8;
+  border-radius: 6px;
+  background: #fff;
+  color: #26372f;
+  font: inherit;
+}
+
+.account-field input:focus {
+  outline: 2px solid rgba(36, 94, 82, 0.2);
+  border-color: #245e52;
+}
+
+.account-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 5px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #245e52;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.account-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.account-error {
+  margin: 0;
+  color: #a12828;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.account-success {
+  color: #245e52;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.account-switch {
+  margin: 22px 0 0;
+  text-align: center;
+  color: #737a75;
+  font-size: 14px;
+}
+
+.account-switch button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #245e52;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.account-profile {
+  text-align: center;
+}
+
+.account-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 66px;
+  height: 66px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: #edf4f0;
+  color: #245e52;
+}
+
+.account-profile h3 {
+  margin: 14px 0 8px;
+  color: #26372f;
+}
+
+.account-profile p {
+  overflow-wrap: anywhere;
+  color: #737a75;
+}
+
+.account-role {
+  display: inline-block;
+  margin: 8px 0 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #edf4f0;
+  color: #245e52;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .account-section {
+    padding-top: 45px;
+    padding-bottom: 50px;
+  }
+
+  .account-card {
+    padding: 20px;
+  }
+}
+
+.account-card:has(.my-bookings) {
+  max-width: 860px;
+}
+
+.my-bookings {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid #e6e1d7;
+  text-align: left;
+}
+
+.my-bookings-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.my-bookings-heading h3 {
+  margin: 8px 0 0;
+  color: #26372f;
+  font-size: 25px;
+}
+
+.booking-count {
+  color: #245e52;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.booking-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.booking-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e6e1d7;
+  border-radius: 10px;
+  background: #fbfaf7;
+}
+
+.booking-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.booking-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #7a827c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.booking-code {
+  overflow-wrap: anywhere;
+  color: #30453b;
+  font-size: 12px;
+}
+
+.booking-status {
+  display: inline-block;
+  padding: 6px 9px;
+  border-radius: 20px;
+  background: #fff2d9;
+  color: #8a5b00;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.booking-status.status-confirmed,
+.booking-status.status-checked-in {
+  background: #e6f4eb;
+  color: #216b40;
+}
+
+.booking-status.status-cancelled {
+  background: #fae8e8;
+  color: #a12828;
+}
+
+.booking-status.status-checked-out {
+  background: #e9edf5;
+  color: #41577e;
+}
+
+.booking-room {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  color: #245e52;
+}
+
+.booking-room h4 {
+  margin: 0 0 5px;
+  color: #26372f;
+  font-size: 16px;
+}
+
+.booking-room p {
+  margin: 0;
+  color: #737a75;
+  font-size: 13px;
+}
+
+.booking-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid #e6e1d7;
+  border-bottom: 1px solid #e6e1d7;
+}
+
+.booking-dates strong {
+  color: #30453b;
+  font-size: 12px;
+}
+
+.booking-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 17px;
+}
+
+.booking-total span {
+  color: #737a75;
+  font-size: 13px;
+}
+
+.booking-total strong {
+  color: #245e52;
+  font-size: 17px;
+}
+
+.booking-message {
+  color: #737a75;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+@media (max-width: 650px) {
+  .booking-list {
+    grid-template-columns: 1fr;
+  }
+
+  .my-bookings-heading {
+    align-items: flex-start;
+  }
+
+  .booking-card {
+    padding: 16px;
+  }
+}

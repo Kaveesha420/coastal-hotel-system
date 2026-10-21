@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -16,44 +15,26 @@ import {
 } from "lucide-react";
 
 import "./App.css";
+import AuthSection from "./components/AuthSection.jsx";
 
-const rooms = [
-  {
-    name: "Ocean View Single",
-    capacity: "1 guest",
-    description: "A peaceful private retreat with beautiful ocean views.",
-    image:
-      "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    name: "Deluxe Double",
-    capacity: "2 guests",
-    description: "A comfortable stay designed for couples and friends.",
-    image:
-      "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    name: "Family Triple",
-    capacity: "3 guests",
-    description: "Extra space for a relaxed family seaside getaway.",
-    image:
-      "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    name: "VIP Ocean Suite",
-    capacity: "Suite accommodation",
-    description: "An elevated stay with a little more privacy and comfort.",
-    image:
-      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=900&q=80",
-  },
-];
+const roomImages = {
+  SINGLE:
+    "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=900&q=80",
+
+  DOUBLE:
+    "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80",
+
+  TRIPLE:
+    "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=900&q=80",
+
+  VIP: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=900&q=80",
+};
 
 const experiences = [
   {
     icon: Waves,
     title: "Pool & Beach",
-    description:
-      "Unwind by the swimming pool and enjoy access to the sea.",
+    description: "Unwind by the swimming pool and enjoy access to the sea.",
   },
   {
     icon: UtensilsCrossed,
@@ -70,8 +51,7 @@ const experiences = [
   {
     icon: CalendarDays,
     title: "Private Functions",
-    description:
-      "Plan celebrations, gatherings and exclusive hotel events.",
+    description: "Plan celebrations, gatherings and exclusive hotel events.",
   },
 ];
 
@@ -83,8 +63,7 @@ function App() {
 
     async function checkApi() {
       try {
-        const apiUrl =
-          import.meta.env.VITE_API_URL || "http://localhost:5000";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
         const response = await fetch(`${apiUrl}/api/health`);
 
@@ -111,6 +90,144 @@ function App() {
     };
   }, []);
 
+  const [rooms, setRooms] = useState([]);
+  const [roomsLoading, setRoomsLoading] = useState(true);
+  const [roomsError, setRoomsError] = useState("");
+
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [guests, setGuests] = useState("2");
+
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilitySearched, setAvailabilitySearched] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function fetchRooms() {
+      try {
+        setRoomsLoading(true);
+        setRoomsError("");
+
+        const apiUrl = (
+          import.meta.env.VITE_API_URL || "http://localhost:5000"
+        ).replace(/\/$/, "");
+
+        const response = await fetch(`${apiUrl}/api/rooms`, {
+          signal: controller.signal,
+        });
+
+        const contentType = response.headers.get("content-type");
+
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error(
+            `API returned HTML instead of JSON. Check URL: ${apiUrl}/api/rooms`,
+          );
+        }
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "Unable to load rooms.");
+        }
+
+        setRooms(result.data);
+
+        console.log("Rooms loaded from database:", result.data);
+
+        if (!response.ok || !result.success) {
+          throw new Error("Unable to load rooms.");
+        }
+
+        setRooms(result.data);
+
+        console.log("Rooms loaded from database:", result.data);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Room loading error:", error);
+          setRoomsError("Rooms could not be loaded. Please try again.");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setRoomsLoading(false);
+        }
+      }
+    }
+
+    fetchRooms();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  async function handleAvailabilitySearch(event) {
+    event.preventDefault();
+
+    setAvailabilityError("");
+    setAvailabilitySearched(true);
+
+    if (!checkIn || !checkOut) {
+      setRooms([]);
+      setAvailabilityError("Please select check-in and check-out dates.");
+      return;
+    }
+
+    if (checkOut <= checkIn) {
+      setRooms([]);
+      setAvailabilityError("Check-out date must be after check-in date.");
+      return;
+    }
+
+    setAvailabilityLoading(true);
+    setRooms([]);
+    setRoomsError("");
+
+    try {
+      const apiUrl = (
+        import.meta.env.VITE_API_URL || "http://localhost:5000"
+      ).replace(/\/$/, "");
+
+      const params = new URLSearchParams({
+        checkIn,
+        checkOut,
+        guests,
+      });
+
+      const response = await fetch(
+        `${apiUrl}/api/rooms/availability?${params.toString()}`,
+      );
+
+      const contentType = response.headers.get("content-type");
+
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(
+          "The server did not return JSON. Please check the API URL.",
+        );
+      }
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to check room availability.");
+      }
+
+      setRooms(result.data);
+
+      console.log("Available rooms:", result.data);
+    } catch (error) {
+      console.error("Availability search error:", error);
+
+      setRooms([]);
+      setAvailabilityError(
+        error.message || "Unable to check room availability.",
+      );
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  }
+
   return (
     <>
       <div className="announcement">
@@ -133,6 +250,7 @@ function App() {
           <a href="#dining">Dining</a>
           <a href="#experiences">Experiences</a>
           <a href="#events">Events</a>
+          <a href="#account">Account</a>
         </nav>
 
         <a className="nav-cta" href="#rooms">
@@ -164,8 +282,8 @@ function App() {
             </h1>
 
             <p>
-              Wake up to sea views, slow down by the pool,
-              and discover a stay made for memorable moments.
+              Wake up to sea views, slow down by the pool, and discover a stay
+              made for memorable moments.
             </p>
 
             <div className="hero-actions">
@@ -199,9 +317,9 @@ function App() {
 
           <div className="welcome-copy">
             <p>
-              From intimate rooms to VIP stays, delicious dining and
-              special celebrations, bring all your favourite moments
-              together in one seaside destination.
+              From intimate rooms to VIP stays, delicious dining and special
+              celebrations, bring all your favourite moments together in one
+              seaside destination.
             </p>
 
             <div className="api-badge">
@@ -223,47 +341,178 @@ function App() {
           <div className="section-heading">
             <div>
               <span className="eyebrow eyebrow-dark">YOUR STAY, YOUR WAY</span>
-              <h2>Find your <em>room.</em></h2>
+              <h2>
+                Find your <em>room.</em>
+              </h2>
             </div>
 
             <p>
-              Four ways to make yourself at home.
-              Room rates and live availability will be added in the
-              booking stage.
+              Select your dates and guests to discover rooms available for your
+              stay.
             </p>
           </div>
 
-          <div className="room-grid">
-            {rooms.map((room, index) => (
-              <article className="room-card" key={room.name}>
-                <div className="room-image-wrap">
-                  <img
-                    src={room.image}
-                    alt={room.name}
-                    loading="lazy"
-                  />
-                  <span className="room-number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                </div>
+          <form
+            className="availability-form"
+            onSubmit={handleAvailabilitySearch}
+          >
+            <div className="availability-field">
+              <label htmlFor="checkIn">Check-in</label>
+              <input
+                id="checkIn"
+                type="date"
+                required
+                value={checkIn}
+                onChange={(event) => setCheckIn(event.target.value)}
+                min={
+                  new Date().getFullYear() +
+                  "-" +
+                  String(new Date().getMonth() + 1).padStart(2, "0") +
+                  "-" +
+                  String(new Date().getDate()).padStart(2, "0")
+                }
+              />
+            </div>
 
-                <div className="room-info">
-                  <div className="room-meta">
-                    <span>
-                      <BedDouble size={15} /> {room.capacity}
-                    </span>
-                    <span>ROOM / SUITE</span>
-                  </div>
+            <div className="availability-field">
+              <label htmlFor="checkOut">Check-out</label>
+              <input
+                id="checkOut"
+                type="date"
+                required
+                min={checkIn || undefined}
+                value={checkOut}
+                onChange={(event) => setCheckOut(event.target.value)}
+              />
+            </div>
 
-                  <h3>{room.name}</h3>
-                  <p>{room.description}</p>
+            <div className="availability-field">
+              <label htmlFor="guests">Guests</label>
+              <select
+                id="guests"
+                value={guests}
+                onChange={(event) => setGuests(event.target.value)}
+              >
+                <option value="1">1 Guest</option>
+                <option value="2">2 Guests</option>
+                <option value="3">3 Guests</option>
+                <option value="4">4 Guests</option>
+              </select>
+            </div>
 
-                  <a href="#contact" className="text-link">
-                    Enquire about this room <ArrowRight size={16} />
-                  </a>
-                </div>
-              </article>
-            ))}
+            <button
+              className="availability-button"
+              type="submit"
+              disabled={availabilityLoading}
+            >
+              {availabilityLoading ? "Checking..." : "Check Availability"}
+              {!availabilityLoading && <ArrowRight size={17} />}
+            </button>
+          </form>
+
+          {availabilityError && (
+            <p className="availability-error" role="alert">
+              {availabilityError}
+            </p>
+          )}
+
+          <div className="availability-results">
+            {(roomsLoading || availabilityLoading) && (
+              <p className="rooms-status">
+                {availabilityLoading
+                  ? "Checking available rooms..."
+                  : "Loading rooms..."}
+              </p>
+            )}
+
+            {!roomsLoading &&
+              !availabilityLoading &&
+              !availabilitySearched &&
+              roomsError && (
+                <p className="availability-error" role="alert">
+                  {roomsError}
+                </p>
+              )}
+
+            {!roomsLoading &&
+              !availabilityLoading &&
+              availabilitySearched &&
+              !availabilityError &&
+              rooms.length > 0 && (
+                <p className="availability-results-note">
+                  {rooms.length} room{rooms.length !== 1 ? "s" : ""} found for
+                  your selected dates.
+                </p>
+              )}
+
+            {!roomsLoading &&
+              !availabilityLoading &&
+              availabilitySearched &&
+              !availabilityError &&
+              rooms.length === 0 && (
+                <p className="rooms-status">
+                  No rooms are available for your selected dates and guest
+                  count. Please try different dates.
+                </p>
+              )}
+
+            {!roomsLoading &&
+              !availabilityLoading &&
+              rooms.map((room) => {
+                const roomType =
+                  room.type === "VIP"
+                    ? "VIP"
+                    : room.type.charAt(0) + room.type.slice(1).toLowerCase();
+
+                const image = roomImages[room.type] || roomImages.SINGLE;
+
+                return (
+                  <article className="room-card" key={room.id}>
+                    <div className="room-image-wrap">
+                      <img
+                        src={image}
+                        alt={`${roomType} Room ${room.roomNumber}`}
+                        loading="lazy"
+                      />
+
+                      <span className="room-number">{room.roomNumber}</span>
+                    </div>
+
+                    <div className="room-info">
+                      <div className="room-meta">
+                        <span>
+                          <BedDouble size={15} />
+                          {room.capacity}{" "}
+                          {room.capacity === 1 ? "guest" : "guests"}
+                        </span>
+
+                        <span>{room.type} ROOM</span>
+                      </div>
+
+                      <h3>
+                        {roomType} Room {room.roomNumber}
+                      </h3>
+
+                      <p>
+                        {room.description ||
+                          "A comfortable room for your stay."}
+                      </p>
+
+                      <p className="room-price">
+                        <strong>
+                          LKR{" "}
+                          {Number(room.pricePerNight).toLocaleString("en-LK")}
+                        </strong>{" "}
+                        <span>/ night</span>
+                      </p>
+
+                      <a href="#contact" className="text-link">
+                        Enquire about this room <ArrowRight size={16} />
+                      </a>
+                    </div>
+                  </article>
+                );
+              })}
           </div>
         </section>
 
@@ -278,12 +527,16 @@ function App() {
 
           <div className="dining-content">
             <span className="eyebrow">A TABLE BY THE SEA</span>
-            <h2>Good food.<br /><em>Great company.</em></h2>
+            <h2>
+              Good food.
+              <br />
+              <em>Great company.</em>
+            </h2>
 
             <p>
-              Explore flavours from around the world, from Indian
-              favourites to Chinese classics and Italian-inspired dining.
-              Reserve your table or enjoy room service during your stay.
+              Explore flavours from around the world, from Indian favourites to
+              Chinese classics and Italian-inspired dining. Reserve your table
+              or enjoy room service during your stay.
             </p>
 
             <div className="cuisine-list">
@@ -303,11 +556,13 @@ function App() {
           <div className="section-heading">
             <div>
               <span className="eyebrow eyebrow-dark">MORE THAN A ROOM</span>
-              <h2>Make it a <em>moment.</em></h2>
+              <h2>
+                Make it a <em>moment.</em>
+              </h2>
             </div>
             <p>
-              Add experiences and services to build the getaway
-              that feels right for you.
+              Add experiences and services to build the getaway that feels right
+              for you.
             </p>
           </div>
 
@@ -333,9 +588,9 @@ function App() {
             <div>
               <strong>Your stay, your extras.</strong>
               <p>
-                Airport transfers, additional beds, excursions and
-                other hotel services will be available to add during
-                the booking process where applicable.
+                Airport transfers, additional beds, excursions and other hotel
+                services will be available to add during the booking process
+                where applicable.
               </p>
             </div>
           </div>
@@ -344,11 +599,12 @@ function App() {
         <section className="event-section" id="events">
           <div className="event-copy">
             <span className="eyebrow">A PLACE TO COME TOGETHER</span>
-            <h2>Celebrate something <em>special.</em></h2>
+            <h2>
+              Celebrate something <em>special.</em>
+            </h2>
             <p>
-              From birthdays and weddings to private gatherings,
-              plan your event with tailored accommodation,
-              dining and additional services.
+              From birthdays and weddings to private gatherings, plan your event
+              with tailored accommodation, dining and additional services.
             </p>
 
             <a href="#contact" className="button button-light">
@@ -360,9 +616,8 @@ function App() {
             <ShieldCheck size={30} />
             <h3>Exclusive hotel bookings</h3>
             <p>
-              Full-hotel function reservations will be managed
-              alongside room and restaurant availability to help
-              avoid double bookings.
+              Full-hotel function reservations will be managed alongside room
+              and restaurant availability to help avoid double bookings.
             </p>
           </div>
         </section>
@@ -381,6 +636,8 @@ function App() {
             <span>Seaside experiences</span>
           </div>
         </section>
+
+        <AuthSection />
       </main>
 
       <footer className="footer" id="contact">
@@ -394,9 +651,7 @@ function App() {
           </span>
         </a>
 
-        <p>
-          A seaside escape for stays, dining and unforgettable occasions.
-        </p>
+        <p>A seaside escape for stays, dining and unforgettable occasions.</p>
 
         <a href="#home" className="text-link">
           Back to top ↑

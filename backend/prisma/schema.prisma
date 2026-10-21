@@ -1,0 +1,125 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CUSTOMER
+  OWNER
+  ADMIN
+  MANAGER
+  RECEPTION
+  RESTAURANT_STAFF
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  TRIPLE
+  VIP
+}
+
+enum BookingType {
+  ROOM
+  FULL_HOTEL_EVENT
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum ServiceCategory {
+  ROOM_SERVICE
+  RESTAURANT
+  POOL
+  TRANSPORT
+  EVENT
+  OTHER
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  fullName     String
+  email        String     @unique
+  passwordHash String
+  phone        String?
+  role         UserRole   @default(CUSTOMER)
+  bookings     Booking[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Room {
+  id           Int        @id @default(autoincrement())
+  roomNumber   String     @unique
+  type         RoomType
+  capacity     Int
+  pricePerNight Decimal   @db.Decimal(10, 2)
+  description  String?
+  isActive     Boolean    @default(true)
+  bookings     Booking[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Booking {
+  id          Int           @id @default(autoincrement())
+  bookingCode String        @unique @default(cuid())
+  type        BookingType   @default(ROOM)
+  status      BookingStatus @default(PENDING)
+
+  userId      Int
+  user        User          @relation(fields: [userId], references: [id])
+
+  roomId      Int?
+  room        Room?         @relation(fields: [roomId], references: [id])
+
+  eventName   String?
+  checkIn     DateTime
+  checkOut    DateTime
+  guests      Int
+  totalAmount Decimal       @default(0) @db.Decimal(10, 2)
+
+  services    BookingService[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([roomId, checkIn, checkOut])
+  @@index([status])
+}
+
+model Service {
+  id          Int              @id @default(autoincrement())
+  name        String
+  description String?
+  category    ServiceCategory  @default(OTHER)
+  price       Decimal          @db.Decimal(10, 2)
+  isAvailable Boolean          @default(true)
+  bookings    BookingService[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model BookingService {
+  id        Int      @id @default(autoincrement())
+  bookingId Int
+  serviceId Int
+  quantity  Int      @default(1)
+  unitPrice Decimal  @db.Decimal(10, 2)
+
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([bookingId, serviceId])
+}
